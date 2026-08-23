@@ -107,9 +107,9 @@ for f = 1:length(freq)
     P_trG_numerator = 1i*medium.rho*omega^2;  % 这部分与倒易空间G无关，直接计算
 %     field.y = zeros(size(field.y));
     % 使用前请注意修改内部的x或y为常数，看计算的平面
-    % P_tr = GenTransmissionField(W2_G, G, k_zG, k, field, P_trG_numerator, plate.d, 0);
+    P_tr = GenTransmissionField(W2_G, G, k_zG, k, field, P_trG_numerator, plate.d, 0);
     % P_tr = GenTransmissionField_Matrix(W2_G, G, k_zG, k, field, P_trG_numerator, plate.d);
-    P_tr = GenTransmissionField_PML(W2_G, G, k_zG, k, field, P_trG_numerator, 0);
+    % P_tr = GenTransmissionField_PML(W2_G, G, k_zG, k, field, P_trG_numerator, 0);
     figure("Name",sprintf("Transmission Field (freq = %d Hz, M = %d, zeta = %d)",f0,M,grating.zeta_max))
     surf(xx,zzx,real(P_tr))
     view([-180 90])
