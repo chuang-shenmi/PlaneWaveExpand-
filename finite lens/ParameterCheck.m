@@ -1,32 +1,32 @@
 function ParameterCheck(resonator, lattice, plate)
 
 if size(resonator.k,2) ~= resonator.N
-    % 弹性系数矩阵的元素个数不能和谐振器数量匹配
-    if size(resonator.k,2) == 1  % 所有弹簧弹性系数相同
+    % The number of elements in the stiffness matrix does not match the number of oscillators.
+    if size(resonator.k,2) == 1  % All springs have the same spring constant.
         resonator.k = resonator.k*ones(1,resonator.N);
     else
-        error("谐振器数量或弹簧刚度矩阵有误！")
+        error("There is an error in the number of resonators or the spring stiffness matrix!")
     end
 end
 if size(resonator.k,1) ~= size(resonator.m,1) + 1
-    error("物理模型要求弹簧数量始终比质量数量多一，请检查！")
+    error("The physical model requires that the number of springs always be one more than the number of masses. Please check!")
 end
 if size(resonator.m,2) ~= resonator.N
-    % 质量矩阵的元素个数不能和谐振器数量匹配
-    if size(resonator.m,2) == 1  % 所有振子质量相同
+    % The number of elements in the mass matrix does not match the number of resonators.
+    if size(resonator.m,2) == 1  % All oscillators have the same mass
         resonator.m = resonator.m*ones(1,resonator.N);
     else
-        error("谐振器数量或振子质量矩阵有误！")
+        error("There is an error in the number of resonators or the mass matrix of the oscillators!")
     end
 end
 if size(resonator.r,2) ~= length(lattice.a1)
-    % 谐振器附着点坐标有误
-    error("谐振器附着点位置坐标矩阵有误！")
+    % The coordinates of the resonator attachment points are incorrect.
+    error("The coordinate matrix for the resonator attachment points is incorrect!")
 end
 if size(resonator.r,1) ~= resonator.N
-    % 谐振器坐标组数量与谐振器数量不匹配
-    error("谐振器坐标组数量不足！")
+    % The number of resonator coordinate sets does not match the number of resonators.
+    error("Insufficient number of resonator coordinate sets!")
 end
 if plate.d <= (plate.h(1)+plate.h(2))/2
-    error("两板间隔过小，几何存在干涉！")
+    error("The spacing between the two plates is too small, resulting in geometric interference!")
 end
