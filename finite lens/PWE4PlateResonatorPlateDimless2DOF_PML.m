@@ -1,5 +1,5 @@
 function [tau_power, tau_pressure, W2_G, Kz, G, feature] = PWE4PlateResonatorPlateDimless2DOF_PML(plate,resonator,lattice,medium,incident,M,freq,meta)
-% 基于双薄板中间夹杂谐振器的无量纲方程平面波展开法计算透射系数等参数(N=2)
+% Calculation of Transmission Coefficients and Other Parameters Using the Plane Wave Expansion Method for the Dimensionless Equations of a Resonator Composed of Two Thin Plates with an Interlayer (N=2)
 
 
 %%  Check whether the number of parameters are matched.
@@ -68,8 +68,8 @@ nfreq = length(freq);
 alpha_power = zeros(1,nfreq);
 tau_power = zeros(1,nfreq);
 tau_pressure = zeros(1,nfreq);
-P_refG = zeros(N_PW,nfreq);  % 反射声压平面波展开系数
-P_trG = zeros(N_PW,nfreq);  % 透射声压平面波展开系数
+P_refG = zeros(N_PW,nfreq);
+P_trG = zeros(N_PW,nfreq); 
 k_zG = zeros(N_PW,nfreq);
 Kz = zeros(N_PW, N_PW, nfreq);
 
@@ -133,10 +133,10 @@ for i = 1:nfreq
 
 
     % resonator
-    Dr11 = zeros(resonator.N,1);  % 谐振器动态刚度系数（非展开）
-    Dr12 = zeros(resonator.N,1);  % 谐振器动态刚度系数（非展开）
-    Dr21 = zeros(resonator.N,1);  % 谐振器动态刚度系数（非展开）
-    Dr22 = zeros(resonator.N,1);  % 谐振器动态刚度系数（非展开）
+    Dr11 = zeros(resonator.N,1);
+    Dr12 = zeros(resonator.N,1);
+    Dr21 = zeros(resonator.N,1);
+    Dr22 = zeros(resonator.N,1); 
     if resonator.eta ~= 0
         if isvector(resonator.eta)
             damping = 1 + 1i * resonator.eta;
@@ -186,11 +186,11 @@ for i = 1:nfreq
     
     if cond(A) < 1e6
         W_G = A \ F;  % cal displacement coefficient
-    else  % 如果矩阵病态严重，采用Jacobi预处理进行矩阵平衡并求解方程
+    else
         W_G = MatrixBalanceJacobi(A,F);
     end
-    W1_G = W_G(1:N_PW);  % 上板的位移系数
-    W2_G = W_G(N_PW+1:end);  % 下板的位移系数
+    W1_G = W_G(1:N_PW);
+    W2_G = W_G(N_PW+1:end);
     
     % If PML is off
     if nargin == 7
@@ -244,7 +244,7 @@ end
 
 
 
-% 对输出物理量还原其量纲（保证主程序为有量纲量，该函数内计算时使用的为无量纲量）
+% Restore the dimensions of the output physical quantities (ensuring that the main program uses dimensional quantities, while the calculations within this function use dimensionless quantities)
 W2_G = W2_G*feature.L0;
 Kz = Kz.*feature.k0;
 G = G/feature.L0;
