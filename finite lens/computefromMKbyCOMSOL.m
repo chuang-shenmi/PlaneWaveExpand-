@@ -1,13 +1,13 @@
 function [para_list] = computefromMKbyCOMSOL(data_file, M)
-% 通过读取comsol扫描几何参数计算出来的等效质量和刚度参数，计算可制造的结构的透射率和相位
-% 该函数目前不安全，存在大量默认参数不可修改，调用需谨慎
+% Calculate the transmittance and phase of a manufacturable structure by reading the equivalent mass and stiffness parameters computed by COMSOL using scanned geometric parameters.
+% This function is currently unsafe, as many of its default parameters cannot be modified; use with caution.
 
 % INPUT:
-%        data_file: comsol计算结果的存储位置，带文件名
-%        M：平面波展开阶数（默认值为5）
+%        data_file: Where are COMSOL calculation results stored, including filenames
+%        M：Expansion Order (default value: 5)
 
 % OUTPUT：
-%         para_list: 结构体，包含扫描的三个几何参数，等效质量，等效刚度，透射率，透射相位
+%         para_list: Structure containing three geometric parameters of the scan, equivalent mass, equivalent stiffness, transmittance, and transmission phase
 
 
 if nargin == 1
@@ -16,42 +16,42 @@ end
 
 
 comsol_result = load(data_file);
-% 这里换一个思路，用计算出来的K和M带入到PWE理论中去计算，以免相近值被压缩。
+% Let's take a different approach here: substitute the calculated values of K and M into the PWE theory for the calculation to avoid the compression of similar values.
 mlist = comsol_result.M;
 klist = comsol_result.K;
 para_list.hmass = comsol_result.hmass_list;
 para_list.wmass = comsol_result.wmass_list;
 para_list.wspring = comsol_result.wspring_list;
 
-%% 板参数
-plate.rho = [7700 7700];  % 板的密度 kg/m^3
-plate.E = [200e9 200e9];  % 板的杨氏模量 Pa
-plate.niu = [0.3 0.3];  % 板的泊松比
-plate.h = [0.005 0.005];  % 板的厚度 m
-plate.d = 0.04;  % 上下两板间的距离 m
-plate.eta = 0;  % 板的损耗因子
+%% Plate Parameter
+plate.rho = [7700 7700];  % density kg/m^3
+plate.E = [200e9 200e9];  % Young's Modulus Pa
+plate.niu = [0.3 0.3];  % Poission ratio
+plate.h = [0.005 0.005];  % thickness m
+plate.d = 0.04;  % distance between two plates m
+plate.eta = 0;  % damping factor
 
 
-%% 晶格参数
-lattice.a = 0.042;  % 晶格常数 m
-lattice.a1 = [lattice.a 0];  % 晶格基矢量1
-lattice.a2 = [0 lattice.a];  % 晶格基矢量2
+%% Lattice parameter
+lattice.a = 0.042;  % lattice constant m
+lattice.a1 = [lattice.a 0];  % lattice basis vector 1
+lattice.a2 = [0 lattice.a];  % lattice basis vector 2
 
 
-%% 传播介质参数
-medium.rho = 1000;  % 水的密度 kg/m^3
-medium.c0 = 1500;  % 水中声速 m/s
+%% Medium parameter
+medium.rho = 1000;  % density kg/m^3
+medium.c0 = 1500;  % sound speed m/s
 
 
-%% 入射波参数
-incident.theta = 0*pi/180;  % 仰角 rad
-incident.phi = 0*pi/180;  % 方位角 rad
-incident.P0 = 10;  % 幅值  Pa
+%% Incident parameter
+incident.theta = 0*pi/180;  % Elevation Angle rad
+incident.phi = 0*pi/180;  % Azimuth rad
+incident.P0 = 10;  % Amplitute  Pa
 
-freq = 10e3;  % 入射波频率 Hz
+freq = 10e3;  % Frequency Hz
 
 
-%% 平面波展开法计算透射系数
+%% PWE core
 tau = zeros(length(klist),1);
 phi = zeros(length(klist),1);
 tau_p = zeros(length(klist),1);
@@ -59,19 +59,18 @@ stl = zeros(length(klist),1);
 W2_G = zeros(length(klist),(2*M+1)^2);
 k_zG = zeros(length(klist),(2*M+1)^2);
 
-% resonator中的参数矩阵，除位置坐标行数仅与一个晶格内谐振器的数量有关外，弹性系数矩阵和质量矩阵的列数与一个晶格内谐振器数量有关，而行数与一个谐振器内有几个质量和弹簧有关。
-last_percent = 0; % 记录上一次输出的百分比
+% In the `resonator` parameter matrix, while the number of rows for the position coordinates depends only on the number of resonators in a lattice, the number of columns in the stiffness matrix and mass matrix depends on the number of resonators in a lattice, and the number of rows depends on the number of masses and springs within a single resonator.
+last_percent = 0; % Records the percentage of the previous output
 for i = 1:length(klist)
-        %% 谐振器参数
-        resonator.N = 1;  % 一个晶格内谐振器的数量
+        %% Resonator parameter
+        resonator.N = 1;
         resonator.k = [klist(i);
                        klist(i)*0.5;
-                       klist(i)];  % 弹簧的弹性系数矩阵
+                       klist(i)];
         resonator.m = [mlist(i);
-                       mlist(i);];  % 振子的质量矩阵
-        resonator.r = [0 0;];  % 振子在晶格内的位置
-        resonator.eta = [0];  % 谐振器的损耗因子
-
+                       mlist(i);];
+        resonator.r = [0 0;];
+        resonator.eta = [0];
         [tau_power, tau_pressure, W2_Gout, k_zGout] = PWE4PlateResonatorPlateDimlessNDOF2(plate,resonator,lattice,medium,incident,M,freq);
         stl(i) = 10*log10(1./tau_power);
         tau_p(i) = tau_power;
@@ -84,8 +83,7 @@ for i = 1:length(klist)
         W2_G(i,:) = W2_Gout;
         k_zG(i,:) = k_zGout;
         current_iter = i;
-        percent = floor(current_iter/length(mlist)*100);  % 当前百分比（整数）
-        % 当百分比变化时输出一次
+        percent = floor(current_iter/length(mlist)*100);
         if percent > last_percent
             fprintf('已完成：%d%%\n', percent);
             last_percent = percent;
@@ -97,23 +95,3 @@ para_list.k = klist;
 para_list.tau = tau;
 para_list.tau_p = tau_p;
 para_list.phi = phi;
-
-
-% % 绘制透射率和透射相位与弹性系数和质量的关系图
-% [m,k] = meshgrid(mlist,klist);
-% figure()
-% surf(m,k,tau)
-% ax1 = gca;
-% view([0 90])
-% shading interp
-% colorbar
-% xlabel('mass/kg')
-% ylabel('stiffness/Nm^{-1}')
-% figure()
-% surf(m,k,phi)
-% ax2 = gca;
-% view([0 90])
-% shading interp
-% colorbar
-% xlabel('mass/kg')
-% ylabel('stiffness/Nm^{-1}')
